@@ -6,17 +6,22 @@ var ctx = canvas.getContext('2d');
 var interval;
 var frames = 0;
 var images = {
-  mario: 'https://t1.rbxcdn.com/cbc4940cc40fc00da68ffaab0ed89ae1',
-  p2:'',
-  enemy:'http://rs44.pbsrc.com/albums/f1/jonesmk6/Sprite%20research/8_bit_luigi_preview_2_zps3f09aaee.gif~c200',
-  bigEnemy:'https://vignette.wikia.nocookie.net/smbhacksw256/images/2/29/Koopa.png/revision/latest?cb=20130102142142',
-  bigEnemy2:'https://orig00.deviantart.net/54f3/f/2016/343/5/e/sprite_practice___goomba_by_yoheywhaddup-dar4767.png',
+  mario: 'images/mario.png',
+  luigi:'images/Luigi.png',
+  enemy:'images/goomba.png',
+  bigEnemy:'images/Koopa.png',
+  bigEnemy2:'images/Shy_Guy.png',
   bullet:'images/bullet.png',
-  myBullet:'http://icons.iconarchive.com/icons/ph03nyx/super-mario/256/Retro-Fire-Ball-icon.png',
+  myBullet:'images/mybullet.png',
   bg: 'images/bg.png',
 }
 var enemies = [];
 var killcount = 0;
+var firstBtn = document.getElementById("1p");
+var secondBtn = document.getElementById("2p");
+var bgSound = new Audio();
+bgSound.src = 'Sound/[03] Youkai Modern Colony.mp3';
+bgSound.loop = true;
 
 //classes
 class Board {
@@ -105,8 +110,8 @@ class Enemy extends Character{
 class BigEnemy extends Character{
   constructor(x,y,speedX,speedY,img){
     super(x,y,speedX,speedY,img);
-    this.width = 48;
-    this.height = 48;
+    this.width = 56;
+    this.height = 56;
     this.hp = 3;
   }
   draw(){
@@ -213,13 +218,13 @@ class BigEnemyBullet2 extends Bullet{
 //instances
 var board;
 var mario;
+var luigi;
 
 
 //main functions
 function start(){
   interval = setInterval(update, 1000/60);
   board = new Board();
-  mario = new Character(304,canvas.height-32,images.mario);
 }
 
 function update(){
@@ -227,7 +232,9 @@ function update(){
   ctx.clearRect(0,0,canvas.width,canvas.height);
   board.draw();
   mario.draw();
+  if(luigi)luigi.draw();
   drawMyBullets();
+  if(luigi)drawLuigiBullets();
   enemyCreate();
   checkWin();
 }
@@ -239,10 +246,22 @@ function generateMyBullets(){
   mario.bullets.push(bullet);
 }
 
+function generateLuigiBullets(){
+  var bullet = new Bullet(luigi);
+  luigi.bullets.push(bullet);
+}
+
 function drawMyBullets(){
   mario.bullets.forEach(function(a){
     a.draw();
     if(a.y < -10)mario.bullets.splice(0,1);
+  })
+}
+
+function drawLuigiBullets(){
+  luigi.bullets.forEach(function(a){
+    a.draw();
+    if(a.y < -10)luigi.bullets.splice(0,1);
   })
 }
 
@@ -298,6 +317,8 @@ function drawEnemies(){
     a.draw();
     if(mario.isTouching(a)){
       checkDeath();
+    } else if (luigi && luigi.isTouching(a)){
+      checkDeath();
     }
     var index = enemies.indexOf(a);
     if(a.y >= canvas.height+a.height){
@@ -306,19 +327,22 @@ function drawEnemies(){
   })
 }
 
-function reduceHp(){
+function checkKill(){
   for(var i = 0; i<enemies.length; i++)
     for(var j = 0; j<mario.bullets.length; j++)
-    if(enemies[i].isTouching(mario.bullets[j]))
-    enemies[i].hp--;
+    if(enemies[i].isTouching(mario.bullets[j])){
+      enemies.splice(i,1);
+      mario.bullets.splice(j,1);
+      killcount++;
+    }
   }
 
-  function checkKill(){
+  function checkLuigiKill(){
     for(var i = 0; i<enemies.length; i++)
-      for(var j = 0; j<mario.bullets.length; j++)
-        if(enemies[i].hp === 0){
+      for(var j = 0; j<luigi.bullets.length; j++)
+      if(enemies[i].isTouching(luigi.bullets[j])){
         enemies.splice(i,1);
-        mario.bullets.splice(j,1);
+        luigi.bullets.splice(j,1);
         killcount++;
     }
   }
@@ -335,6 +359,8 @@ function drawEnemyBullets(){
       c.draw();
       if(mario.isTouching(c)){
         checkDeath();
+      }else if (luigi && luigi.isTouching(c)){
+        checkDeath();
       }
     })
   })
@@ -345,16 +371,14 @@ function enemyCreate(){
   drawEnemies();
   generateEnemyBullets();
   drawEnemyBullets();
-  reduceHp();
   checkKill();
+  if(luigi)checkLuigiKill();
 }
 
 function checkDeath(){
   clearInterval(interval);
   interval = undefined;
   board.gameOver();
-  //sound.pause();
-  //sound.currentTime = 0;
 }
 
 function checkWin(){
@@ -372,14 +396,40 @@ function restart(){
     killcount = 0;
     enemies = [];
     mario.bullets = [];
-    mario.x = 304;
-    mario.y = canvas.height-32;
+    if(!luigi){
+      mario.x = 304;
+      mario.y = canvas.height-32;
+    } else{
+      mario.x = 152;
+      mario.y = canvas.height-32;
+      luigi.x = 304;
+      luigi.y = canvas.height-32;
+    }
     start();
+    bgSound.currentTime = 0;
+    bgSound.play();
   }
 }
 
 //listeners
-start();
+firstBtn.onclick = function(){
+  mario = new Character(304,canvas.height-32,images.mario);
+  firstBtn.style.display = 'none';
+  secondBtn.style.display = 'none';
+  document.getElementById('instructions').style.display = 'none';
+  start();
+  bgSound.play();
+}
+
+secondBtn.onclick = function(){
+  mario = new Character(152,canvas.height-32,images.mario);
+  luigi = new Character(304,canvas.height-32,images.luigi);
+  firstBtn.style.display = 'none';
+  secondBtn.style.display = 'none';
+  document.getElementById('instructions').style.display = 'none';
+  start();
+  bgSound.play();
+}
 
 addEventListener('keydown', function(e){
   switch(e.keyCode){
@@ -399,7 +449,7 @@ addEventListener('keydown', function(e){
       if(mario.y === canvas.height-mario.height)return;
       mario.y += 8;
       break;
-    case 17:
+    case 13:
       if(mario.bullets.length === 3)return;
       generateMyBullets();
       break;
@@ -408,3 +458,28 @@ addEventListener('keydown', function(e){
       break;
   }
 })
+
+addEventListener('keydown', function(e){
+  switch(e.keyCode){
+    case 65:
+      if(luigi.x === 96 + luigi.width)return;
+      luigi.x -= 8;
+      break;
+    case 68:
+      if (luigi.x === canvas.width-128-luigi.width)return;
+      luigi.x += 8;
+      break;
+    case  87:
+      if(luigi.y === 0)return;
+      luigi.y -=8;
+      break;
+    case 83:
+      if(luigi.y === canvas.height-luigi.height)return;
+      luigi.y += 8;
+      break;
+    case 70:
+      if(luigi.bullets.length === 3)return;
+      generateLuigiBullets();
+      break;
+    }
+  })

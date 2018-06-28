@@ -10,3 +10,41 @@ body{
 h1{
   color:white
 }
+
+.btn{
+  margin: 5vh 5vw;
+  width: 180px;
+  height: 60px;
+  color:white;
+  padding-top:35px;
+  flex:1;
+  text-align: center;
+  font-size: 1.5em;
+}
+
+.player1{
+  background-color:red;
+}
+
+.player2{
+  background-color: green;
+}
+
+#player1instr{
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-right: 8vw;
+}
+
+#player2instr{
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+#instructions{
+  display: flex;
+  flex-direction: row;
+  margin-top: 5vh;
+}
