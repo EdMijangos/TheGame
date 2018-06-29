@@ -457,6 +457,7 @@ firstBtn.onclick = function(){
   firstBtn.style.display = 'none';
   secondBtn.style.display = 'none';
   document.getElementById('instructions').style.display = 'none';
+  document.getElementById('logo').style.display = 'none';
   canvas.style.display = 'block';
   start();
   bgSound.play();
@@ -468,6 +469,7 @@ secondBtn.onclick = function(){
   firstBtn.style.display = 'none';
   secondBtn.style.display = 'none';
   document.getElementById('instructions').style.display = 'none';
+  document.getElementById('logo').style.display = 'none';
   canvas.style.display = 'block';
   start();
   bgSound.play();
