@@ -1,4 +1,5 @@
 
+
 //constants
 var canvas = document.getElementById('canvas');
 var ctx = canvas.getContext('2d');
@@ -17,11 +18,26 @@ var images = {
 }
 var enemies = [];
 var killcount = 0;
+var score = 0;
 var firstBtn = document.getElementById("1p");
 var secondBtn = document.getElementById("2p");
 var bgSound = new Audio();
-bgSound.src = 'Sound/[03] Youkai Modern Colony.mp3';
+bgSound.src = 'Sound/mariobg.mp3';
 bgSound.loop = true;
+bgSound.volume = 0.5;
+var winSound = new Audio();
+winSound.src = 'Sound/clear.wav';
+var shootSound = new Audio();
+shootSound.src ='Sound/shoot.wav';
+var enemyShoot = new Audio();
+enemyShoot.src = 'Sound/enemy_shoot.wav';
+enemyShoot.volume = 1;
+var killSound = new Audio();
+killSound.src = 'Sound/kill.wav';
+var deathSound = new Audio();
+deathSound.src = 'Sound/death.wav';
+deathSound.volume = 1;
+
 
 //classes
 class Board {
@@ -44,20 +60,20 @@ class Board {
     ctx.drawImage(this.image,this.x,this.y-canvas.height,this.width,this.height);
   }
   gameOver(){
-    ctx.font = "80px Avenir";
+    ctx.font = "80px Arcade";
     ctx.fillStyle = "white"
-    ctx.fillText("Game Over", 125,200);
-    ctx.font = "20px Serif";
+    ctx.fillText("Game Over", 130,200);
+    ctx.font = "20px Arcade";
     ctx.fillStyle = 'white';
-    ctx.fillText("Press 'Esc' to reset", 240,250);
+    ctx.fillText("Press 'Esc' to reset", 220,250);
   }
   win(){
-    ctx.font = "80px Avenir";
+    ctx.font = "80px Arcade";
     ctx.fillStyle = "white"
-    ctx.fillText("You win!", 160,250);
-    ctx.font = "20px Serif";
+    ctx.fillText("You win!", 220,250);
+    ctx.font = "20px Arcade";
     ctx.fillStyle = 'white';
-    ctx.fillText("Press 'Esc' to reset", 240,300);
+    ctx.fillText("Press 'Esc' to reset", 220,300);
   }
 }
 
@@ -93,9 +109,10 @@ class Character {
 class Enemy extends Character{
   constructor(x,y,img){
     super(x,y,img);
-    this.hp = 1;
+    this.hp = 1; //no funciona
     this.speedX = 2;
     this.speedY = 2;
+    this.scoreValue = 1;
   }
   draw(){
     this.y += this.speedY;
@@ -112,7 +129,8 @@ class BigEnemy extends Character{
     super(x,y,speedX,speedY,img);
     this.width = 56;
     this.height = 56;
-    this.hp = 3;
+    this.hp = 3; //no funciona
+    this.scoreValue = 2;
   }
   draw(){
     this.y += this.speedY;
@@ -129,8 +147,9 @@ class BigEnemy2 extends Character{
     super(x,y,speedX,speedY,img);
     this.width = 48;
     this.height = 48;
-    this.hp = 3;
+    this.hp = 3; //no funciona
     this.speedY = 2.5;
+    this.scoreValue = 2.5;
   }
   draw(){
     this.y += this.speedY;
@@ -184,13 +203,14 @@ class BigEnemyBullet extends Bullet{
   }
 
   draw() {
+    if(this.x <= 96 + mario.width) this.speedX *= -1;
     this.y += this.speedY;
     ctx.drawImage(this.image,this.x,this.y,this.width,this.height);
     this.y += this.speedY;
     this.x -= this.speedX
     ctx.drawImage(this.image,this.x,this.y,this.width,this.height);
     this.y += this.speedY;
-    this.x -= this.speedX
+    this.x -= this.speedX;
     ctx.drawImage(this.image,this.x,this.y,this.width,this.height);
   }
 }
@@ -210,7 +230,7 @@ class BigEnemyBullet2 extends Bullet{
     this.x += this.speedX
     ctx.drawImage(this.image,this.x,this.y,this.width,this.height);
     this.y += this.speedY;
-    this.x += this.speedX
+    this.x += this.speedX;
     ctx.drawImage(this.image,this.x,this.y,this.width,this.height);
   }
 }
@@ -233,10 +253,20 @@ function update(){
   board.draw();
   mario.draw();
   if(luigi)luigi.draw();
+  scoreDraw();
   drawMyBullets();
   if(luigi)drawLuigiBullets();
   enemyCreate();
   checkWin();
+}
+
+function enemyCreate(){
+  generateEnemies();
+  drawEnemies();
+  generateEnemyBullets();
+  drawEnemyBullets();
+  checkKill();
+  if(luigi)checkLuigiKill();
 }
 
 
@@ -263,6 +293,13 @@ function drawLuigiBullets(){
     a.draw();
     if(a.y < -10)luigi.bullets.splice(0,1);
   })
+}
+
+function scoreDraw(){
+  ctx.font = "30px Arcade";
+  ctx.fillStyle = 'white';
+  ctx.fillText('Score:', 20,500);
+  ctx.fillText(score, 20,550);
 }
 
 function generateEnemies(){
@@ -331,8 +368,10 @@ function checkKill(){
   for(var i = 0; i<enemies.length; i++)
     for(var j = 0; j<mario.bullets.length; j++)
     if(enemies[i].isTouching(mario.bullets[j])){
+      score += (enemies[i].scoreValue * 100)
       enemies.splice(i,1);
       mario.bullets.splice(j,1);
+      killSound.play();
       killcount++;
     }
   }
@@ -341,8 +380,10 @@ function checkKill(){
     for(var i = 0; i<enemies.length; i++)
       for(var j = 0; j<luigi.bullets.length; j++)
       if(enemies[i].isTouching(luigi.bullets[j])){
+        score += (enemies[i].scoreValue * 100)
         enemies.splice(i,1);
         luigi.bullets.splice(j,1);
+        killSound.play();
         killcount++;
     }
   }
@@ -350,6 +391,7 @@ function checkKill(){
 function generateEnemyBullets(){
   if(frames%90 === 0)enemies.forEach(function(a){
     a.shoot();
+    enemyShoot.play();
   })
 }
 
@@ -366,19 +408,13 @@ function drawEnemyBullets(){
   })
 }
 
-function enemyCreate(){
-  generateEnemies();
-  drawEnemies();
-  generateEnemyBullets();
-  drawEnemyBullets();
-  checkKill();
-  if(luigi)checkLuigiKill();
-}
-
 function checkDeath(){
   clearInterval(interval);
   interval = undefined;
   board.gameOver();
+  bgSound.pause();
+  bgSound.currentTime = 0;
+  deathSound.play();
 }
 
 function checkWin(){
@@ -386,6 +422,9 @@ function checkWin(){
   clearInterval(interval);
   interval = undefined;
   board.win();
+  bgSound.pause();
+  bgSound.currentTime = 0;
+  winSound.play();
   }
 }
 
@@ -394,15 +433,16 @@ function restart(){
   else {
     frames = 0;
     killcount = 0;
+    score = 0;
     enemies = [];
     mario.bullets = [];
     if(!luigi){
       mario.x = 304;
       mario.y = canvas.height-32;
     } else{
-      mario.x = 152;
+      mario.x = 216;
       mario.y = canvas.height-32;
-      luigi.x = 304;
+      luigi.x = 382;
       luigi.y = canvas.height-32;
     }
     start();
@@ -417,16 +457,18 @@ firstBtn.onclick = function(){
   firstBtn.style.display = 'none';
   secondBtn.style.display = 'none';
   document.getElementById('instructions').style.display = 'none';
+  canvas.style.display = 'block';
   start();
   bgSound.play();
 }
 
 secondBtn.onclick = function(){
-  mario = new Character(152,canvas.height-32,images.mario);
-  luigi = new Character(304,canvas.height-32,images.luigi);
+  mario = new Character(216,canvas.height-32,images.mario);
+  luigi = new Character(384,canvas.height-32,images.luigi);
   firstBtn.style.display = 'none';
   secondBtn.style.display = 'none';
   document.getElementById('instructions').style.display = 'none';
+  canvas.style.display = 'block';
   start();
   bgSound.play();
 }
@@ -449,9 +491,10 @@ addEventListener('keydown', function(e){
       if(mario.y === canvas.height-mario.height)return;
       mario.y += 8;
       break;
-    case 13:
+    case 32:
       if(mario.bullets.length === 3)return;
       generateMyBullets();
+      shootSound.play();
       break;
     case 27:
       restart();
@@ -462,11 +505,11 @@ addEventListener('keydown', function(e){
 addEventListener('keydown', function(e){
   switch(e.keyCode){
     case 65:
-      if(luigi.x === 96 + luigi.width)return;
+      if(luigi.x <= 96 + luigi.width)return;
       luigi.x -= 8;
       break;
     case 68:
-      if (luigi.x === canvas.width-128-luigi.width)return;
+      if (luigi.x >= canvas.width-128-luigi.width)return;
       luigi.x += 8;
       break;
     case  87:
@@ -480,6 +523,7 @@ addEventListener('keydown', function(e){
     case 70:
       if(luigi.bullets.length === 3)return;
       generateLuigiBullets();
+      shootSound.play();
       break;
     }
   })
